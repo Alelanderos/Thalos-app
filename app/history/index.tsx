@@ -1,25 +1,24 @@
-import React, { useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Platform,
-  Alert,
-} from "react-native";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
-  getDoseHistory,
-  getReactives,
-  DoseHistory,
-  Reactive,
-  clearAllData,
-} from "../../utils/storage";
-import { getReactives } from "@/utils/storage";
+    Alert,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import {
+    DoseHistory,
+    Reactive,
+    clearAllData,
+    getDoseHistory,
+    getReactives,
+} from "../utils/storage";
 
 type EnrichedDoseHistory = DoseHistory & { reactive?: Reactive };
 

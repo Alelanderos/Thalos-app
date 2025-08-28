@@ -1,33 +1,39 @@
-import React, { useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Platform,
-} from "react-native";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import {getReactions,getDoseHistory,recordDose,Reaction,DoseHistory,} from "../../utils/storage";
 import { useFocusEffect } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React, { JSX, useCallback, useState } from "react";
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import {
+  DoseHistory,
+  getDoseHistory,
+  getReactives,
+  Reactive,
+  recordDose,
+} from "../utils/storage";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function CalendarScreen() {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [reactions, setReactions] = useState<Reaction[]>([]);
+  const [reactives, setReactives] = useState<Reactive[]>([]);
   const [doseHistory, setDoseHistory] = useState<DoseHistory[]>([]);
 
   const loadData = useCallback(async () => {
     try {
-      const [meds, history] = await Promise.all([
-        getReactions(),
+      const [reac, history] = await Promise.all([
+        getReactives(),
         getDoseHistory(),
       ]);
-      setReactions(meds);
+      setReactives(reac);
       setDoseHistory(history);
     } catch (error) {
       console.error("Error loading calendar data:", error);
@@ -102,29 +108,29 @@ export default function CalendarScreen() {
     return calendar;
   };
 
-  const renderReactionsForDate = () => {
+  const renderReactivesForDate = () => {
     const dateStr = selectedDate.toDateString();
     const dayDoses = doseHistory.filter(
       (dose) => new Date(dose.timestamp).toDateString() === dateStr
     );
 
-    return reactions.map((reaction) => {
+    return reactives.map((reactive) => {
       const taken = dayDoses.some(
-        (dose) => dose.reactionId === reaction.id && dose.taken
+        (dose) => dose.reactiveId === reactive.id && dose.taken
       );
 
       return (
-        <View key={reaction.id} style={styles.reactionCard}>
+        <View key={reactive.id} style={styles.reactiveCard}>
           <View
             style={[
-              styles.reactionColor,
-              { backgroundColor: reaction.color },
+              styles.reactiveColor,
+              { backgroundColor: reactive.color },
             ]}
           />
-          <View style={styles.reactionInfo}>
-            <Text style={styles.reactionName}>{reaction.name}</Text>
-            <Text style={styles.reactionQuantity}>{reaction.quantity}</Text>
-            <Text style={styles.reactionTime}>{reaction.times[0]}</Text>
+          <View style={styles.reactiveInfo}>
+            <Text style={styles.reactiveName}>{reactive.name}</Text>
+            <Text style={styles.reactiveDosage}>{reactive.quantity}</Text>
+            <Text style={styles.reactiveTime}>{reactive.times[0]}</Text>
           </View>
           {taken ? (
             <View style={styles.takenBadge}>
@@ -135,10 +141,10 @@ export default function CalendarScreen() {
             <TouchableOpacity
               style={[
                 styles.takeDoseButton,
-                { backgroundColor: reaction.color },
+                { backgroundColor: reactive.color },
               ]}
               onPress={async () => {
-                await recordDose(reaction.id, true, new Date().toISOString());
+                await recordDose(reactive.id, true, new Date().toISOString());
                 loadData();
               }}
             >
@@ -226,7 +232,7 @@ export default function CalendarScreen() {
             })}
           </Text>
           <ScrollView showsVerticalScrollIndicator={false}>
-            {renderReactionsForDate()}
+            {renderReactivesForDate()}
           </ScrollView>
         </View>
       </View>
@@ -359,7 +365,7 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 15,
   },
-  reactionCard: {
+  reactiveCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "white",
@@ -374,27 +380,27 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  reactionColor: {
+  reactiveColor: {
     width: 12,
     height: 40,
     borderRadius: 6,
     marginRight: 15,
   },
-  reactionInfo: {
+  reactiveInfo: {
     flex: 1,
   },
-  reactionName: {
+  reactiveName: {
     fontSize: 16,
     fontWeight: "600",
     color: "#333",
     marginBottom: 4,
   },
-  reactionQuantity: {
+  reactiveDosage: {
     fontSize: 14,
     color: "#666",
     marginBottom: 2,
   },
-  reactionTime: {
+  reactiveTime: {
     fontSize: 14,
     color: "#666",
   },

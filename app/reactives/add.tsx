@@ -1,16 +1,27 @@
-import { useState } from "react";
-import { View, Text, TextInput, StyleSheet ,TouchableOpacity, ScrollView, Switch, Dimensions, Platform, Alert } from "react-native";
-import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { addReactive } from "../../utils/storage";
-import {scheduleReactiveReminder, scheduleRefillReminder} from "../../utils/notifications";
-import { BlurView } from "expo-blur";
-
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+  Alert,
+  Dimensions,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
+import {
+  scheduleReactiveReminder,
+  scheduleRefillReminder,
+} from "../utils/notifications";
+import { addReactive } from "../utils/storage";
 
 const { width } = Dimensions.get("window");
-
 
 const FREQUENCIES = [
   {
@@ -48,11 +59,11 @@ const DURATIONS = [
   { id: "5", label: "Ongoing", value: -1 },
 ];
 
-export default function AddReactivesScreen(){
-    const router = useRouter();
-    const [form, setForm] = useState({
+export default function AddReactiveScreen() {
+  const router = useRouter();
+  const [form, setForm] = useState({
     name: "",
-    cantidad: "",
+    quantity: "",
     frequency: "",
     duration: "",
     startDate: new Date(),
@@ -64,411 +75,514 @@ export default function AddReactivesScreen(){
     refillAt: "",
   });
 
-    const [errors, setErrors] = useState<{ [key: string]: string }>({});
-    const [showTimePicker, setShowTimePicker] = useState(false);
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    const [selectedFrequency, setSelectedFrequency] = useState("");
-    const [selectedDuration, setSelectedDuration] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedFrequency, setSelectedFrequency] = useState("");
+  const [selectedDuration, setSelectedDuration] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const renderFrecuencyOptions = () =>{
-    return(
-        <View style={styles.optionsGrid}>
-            {FREQUENCIES.map((freq) => (
-                <TouchableOpacity
-                key={freq.id}
-                style={[
-                    styles.optionCard,
-                    selectedFrequency === freq.label && styles.selectedOptionCard,
-                ]} 
-                onPress={() => {
-                  setSelectedFrequency(freq.label);
-                  setForm({...form, frequency:freq.label});
-                }}
-                >
-                    <View style={[
-                        styles.optionIcon,
-                        selectedFrequency === freq.label && styles.selectedOptionIcon,
-                    ]}>
-                        <Ionicons
-                        name={freq.icon}
-                        size={24}
-                        color={selectedFrequency === freq.label ? "white": "#666"}
-                        />
-                        <Text 
-                        style={[
-                            styles.optionLabel,
-                            selectedFrequency === freq.label && styles.selectedOptionLabel,
-                        ]}
-                        >{freq.label}</Text>
-                    </View>
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
 
-                </TouchableOpacity>
-            ))}
-        </View>
-    )
-    };
+    if (!form.name.trim()) {
+      newErrors.name = "Reactive name is required";
+    }
 
-    const renderDurationOptions = () => {
-    return (
-        <View style={styles.optionsGrid}>
-            {DURATIONS.map((dur)=> (
-                <TouchableOpacity
-                key={dur.id}
-                style={[
-                    styles.optionCard,
-                    selectedDuration === dur.label && styles.selectedOptionCard,
-                ]}
-                onPress ={() => {
-                  setSelectedDuration(dur.label);
-                  setForm({...form,duration: dur.label});
-                }}
-                >
-                    <Text 
-                    style={[
-                    styles.durationNumber,
-                    selectedDuration === dur.label && styles.selectedDurationNumber,
-                    ]}
-                    >
-                    {dur.value > 0 ? dur.value: "∞"}</Text>
-                    <Text
-                    style={[
-                        styles.optionLabel,
-                        selectedDuration === dur.label && styles.selectedOptionLabel,
-                    ]}
-                    >{dur.label}
-                    </Text>  
-                </TouchableOpacity>
-            ))}
-        </View>
-    );
-    };
+    if (!form.quantity.trim()) {
+      newErrors.quantity = "Dosage is required";
+    }
 
-    [/* Por si falta algo de poner */]
-    const valideForm = () => {
-        const newErrors: {[key:string] : string} ={};
+    if (!form.frequency) {
+      newErrors.frequency = "Frequency is required";
+    }
 
-        if(!form.name.trim()){
-            newErrors.name = "Se requiere blabla"; 
-        }
+    if (!form.duration) {
+      newErrors.duration = "Duration is required";
+    }
 
-        if(!form.cantidad.trim()){
-            newErrors.name = "blabla"; 
-        } 
-
-        if (!form.frequency) {
-            newErrors.frequency = "Frequency is required";
-        }
-        if (!form.duration) {
-            newErrors.duration = "Duration is required";
-        }
-
-        if (form.refillReminder) {
-            if (!form.currentSupply) {
-                newErrors.currentSupply =
-                    "Current supply is required for refill tracking";
-            }
-        if (!form.refillAt) {
-            newErrors.refillAt = "Refill alert threshold is required";
-        }
-        
-        if (Number(form.refillAt) >= Number(form.currentSupply)) {
-            newErrors.refillAt = "Refill alert must be less than current supply";
-        }
+    if (form.refillReminder) {
+      if (!form.currentSupply) {
+        newErrors.currentSupply =
+          "Current supply is required for refill tracking";
+      }
+      if (!form.refillAt) {
+        newErrors.refillAt = "Refill alert threshold is required";
+      }
+      if (Number(form.refillAt) >= Number(form.currentSupply)) {
+        newErrors.refillAt = "Refill alert must be less than current supply";
+      }
     }
 
     setErrors(newErrors);
-        return Object.keys(newErrors).length=== 0;
-    };
+    return Object.keys(newErrors).length === 0;
+  };
 
-    const handleSave = async () => {
-        try{
-            if (!valideForm()) {
-                Alert.alert("Error, Please fill in all requiered fileds");
-                return;
-            }
-            if (isSubmitting) return;
-            setIsSubmitting(true);
+  const handleSave = async () => {
+    try {
+      if (!validateForm()) {
+        Alert.alert("Error", "Please fill in all required fields correctly");
+        return;
+      }
 
-            const colors= ["#4CAF50", "#2196F3", "#FF9800", "#E91E63", "#9C27B0"];
-            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      if (isSubmitting) return;
+      setIsSubmitting(true);
 
-            const reactiveData = {
-                id: Math.random().toString(36).substr(2, 9),
-                ...form,
-                currentSupply: form.currentSupply ? Number(form.currentSupply) : 0,
-                totalSupply: form.currentSupply ? Number(form.currentSupply) : 0,
-                refillAt: form.refillAt ? Number(form.refillAt) : 0,
-                startDate: form.startDate.toISOString(),
-                color: randomColor,
-            };
+      // Generate a random color
+      const colors = ["#4CAF50", "#2196F3", "#FF9800", "#E91E63", "#9C27B0"];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-            await addReactive(reactiveData);
-            
-            if(reactiveData.reminderEnabled) {
-                await scheduleReactiveReminder(reactiveData);
-            }
-            if (reactiveData.refillReminder) {
-                await ScheduleRefillReminder(reactiveData);
-            }   
+      const reactivesData = {
+        id: Math.random().toString(36).substr(2, 9),
+        ...form,
+        currentSupply: form.currentSupply ? Number(form.currentSupply) : 0,
+        totalSupply: form.currentSupply ? Number(form.currentSupply) : 0,
+        refillAt: form.refillAt ? Number(form.refillAt) : 0,
+        startDate: form.startDate.toISOString(),
+        color: randomColor,
+      };
 
-            Alert.alert(
-                "Sucess",
-                "Se ha agregado todo de forma correcta",
-                [
-                    {
-                        text: "Ok",
-                        onPress: ()=> router.back(),
-                    },
-                ],
-                { cancelable: false}
-            );
-        } catch (error) {
-            console.error("Save error:", error);
-            Alert.alert(
-                "Error", "Failed to save reactive. Please try again",
-                [{ text: "OK"}],
-                {cancelable: false}
-            );
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+      await addReactive(reactivesData);
 
+      // Schedule reminders if enabled
+      if (reactivesData.reminderEnabled) {
+        await scheduleReactiveReminder(reactivesData);
+      }
+      if (reactivesData.refillReminder) {
+        await scheduleRefillReminder(reactivesData);
+      }
 
-   const handleDurationSelect = (dur: string) =>{
-    setSelectedDuration(dur);
-    setForm((prev) => ({...prev,duration: dur}));
-    if (errors.duration) {
-      setErrors((prev) => ({ ...prev, duration: ""}));
+      Alert.alert(
+        "Success",
+        "Reactive added successfully",
+        [
+          {
+            text: "OK",
+            onPress: () => router.back(),
+          },
+        ],
+        { cancelable: false }
+      );
+    } catch (error) {
+      console.error("Save error:", error);
+      Alert.alert(
+        "Error",
+        "Failed to save reactive. Please try again.",
+        [{ text: "OK" }],
+        { cancelable: false }
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-   };
+  };
 
+  const handleFrequencySelect = (freq: string) => {
+    setSelectedFrequency(freq);
+    const selectedFreq = FREQUENCIES.find((f) => f.label === freq);
+    setForm((prev) => ({
+      ...prev,
+      frequency: freq,
+      times: selectedFreq?.times || [],
+    }));
+    if (errors.frequency) {
+      setErrors((prev) => ({ ...prev, frequency: "" }));
+    }
+  };
 
-    return(
-        <View style={styles.container}>
-            {/* */}
-            <LinearGradient
-            colors={["#1A8E2D", "#146922"]}
-            start={{x:0, y:0}}
-            end={{x:1, y:1}}
-            style={styles.headerGradient}
-            />
-            <View style={styles.content}>
-                <View style={styles.header}>
-                    <TouchableOpacity 
-                    onPress={()=> router.back()}
-                    style={styles.backButton}>
-                        <Ionicons name="chevron-back" size={28} color={"#1A8E2D"}/> 
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}> Agregar Reactivo</Text>
-                </View>
+  const handleDurationSelect = (dur: string) => {
+    setSelectedDuration(dur);
+    setForm((prev) => ({ ...prev, duration: dur }));
+    if (errors.duration) {
+      setErrors((prev) => ({ ...prev, duration: "" }));
+    }
+  };
 
-                <ScrollView showsVerticalScrollIndicator={false} 
-                style={{ flex: 1}}
-                contentContainerStyle={styles.formContentContainer}
-                >
-                    {/* Informacion general */}
-                    <View style={styles.section}>
-                       <View style={styles.inputContainer}>
-                            <TextInput 
-                            style={[styles.mainInput, errors.name && styles.inputError]}
-                            placeholder="Nombre del reactivo"
-                            placeholderTextColor={"#999"}
-                            value={form.name}
-                            onChangeText={(text) => {
-                                setForm({...form, name: text})
-                                if(errors.name){
-                                    setErrors({...errors, name:""})
-                                }
-                            }}
-                            />
-                            {errors.name && (
-                                <Text style={styles.errorText}>{errors.name}</Text>
-                            )}
-                       </View>
-                        <View style={styles.inputContainer}>
-                            <TextInput 
-                            style={[styles.mainInput, errors.name && styles.inputError]}
-                            placeholder="Fecha de caducidad"
-                            placeholderTextColor={"#999"}
-                            value={form.cantidad}
-                            onChangeText={(text) => {
-                                setForm({...form, cantidad: text})
-                                if(errors.cantidad){
-                                    setErrors({...errors, cantidad:""})
-                                }
-                            }}
-                            />
-                            {errors.cantidad && (
-                                <Text style={styles.errorText}>{errors.cantidad}</Text>
-                            )}
-                       </View>
-                        <View>
-                            <TextInput 
-                            placeholder="Fecha de compra"
-                            placeholderTextColor={"#999"}
-                            />
-                       </View>
-                    </View>  
-                        {/* Horarios*/}
-                        <View style={styles.container}>
-                            <Text style={styles.sectionTitle}>Cantidad usada</Text>
-                            {errors.frequency && (
-                                <Text style={styles.errorText}>{errors.frequency}</Text>
-                            )}
-                            {renderFrecuencyOptions()}
-                            {/* Cantidad de reactivo a usar o cambiar por equipo a trabajar */}
-
-                            <Text style={styles.sectionTitle}>Tiempo de uso</Text>
-                            {errors.duration && (
-                                <Text style={styles.errorText}>{errors.duration}</Text>
-                            )}
-                            {renderDurationOptions()}
-                            {/* Cantidad de tiempo del recordatorio va  cambiar*/}
-                            <TouchableOpacity
-                            style={styles.dateButton}
-                            onPress={()=> setShowDatePicker(true)}
-                            >
-                                <View style={styles.dateIconContainer}>
-                                    <Ionicons name="calendar" size={20} color={"#1A8E2D"}/>
-                                </View>
-                                <Text style={styles.dateButtonText}> 
-                                    Starts {form.startDate.toLocaleDateString()} 
-                                    </Text>
-                                    <Ionicons name="chevron-forward" size={20} color={"#666"}/>
-                            </TouchableOpacity>
-                            {showDatePicker && (
-                                <DateTimePicker  value={form.startDate} mode="date" 
-                                onChange={(event, date) =>{
-                                    setShowDatePicker(false);
-                                    if(date) setForm ({...form, startDate: date});
-                                }}
-                                />
-                            )}
-
-                            {form.frequency && form.frequency !== "As needed" && (
-                                <View style={styles.timesContainer}>
-                                    <Text style={styles.timesTitle}> BlaBlaBla</Text>
-                                {form.times.map((time,index) => (
-                                    <TouchableOpacity
-                                    key={index}
-                                    onPress={() => {
-                                        setShowTimePicker(true);
-                                    }}
-                                    >
-                                        <View style={styles.timeIconContainer}>
-                                        <Ionicons name="time-outline" size={20} color={"#1A8E2D"}/>
-                                        </View>
-                                        <Text style={styles.timeButtonText}>{time}</Text>
-                                        <Ionicons name="chevron-forward" size={20} color={"#666"}/>
-                                    </TouchableOpacity>
-                                ))}
-                                </View>
-                            )}
-
-                            {showTimePicker && (
-                                <DateTimePicker 
-                                mode="time" 
-                                value={(() =>{
-                                    const [hours, minutes] = form.times[0].split(":").map(Number);
-                                    const date = new Date();
-                                    date.setHours(hours ,minutes, 0, 0);
-                                    return date;
-                                })()}
-                                onChange={(event,date) =>{
-                                    setShowTimePicker(false);
-                                    if (date) {
-                                        const newTime = date.toLocaleTimeString("default", {
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                            hour12: false,
-                                        });
-                                        setForm ((prev) =>({
-                                            ...prev,
-                                            times: prev.times.map((t,i) => (i===0 ? newTime : t))
-                                        }));
-                                    }
-                                }}
-                            />
-                            )}
-                       </View>
-
-                       {/* Recordatorios*/}
-                         <View style={styles.section}>
-                            <View style={styles.card}>
-                                <View style={styles.switchRow}>
-                                    <View style={styles.switchLabelContainer}>
-                                        <View style={styles.iconContainer}>
-                                            <Ionicons name="notifications" color={"#1A8E2D"} />
-                                        </View>
-                                        <View>
-                                            <Text style={styles.switchLabel}>Reminders</Text>
-                                            <Text style={styles.switchSubLabel}>Get notified</Text>
-                                        </View>
-                                    </View>
-                                    <Switch
-                                    value={form.reminderEnabled}
-                                    trackColor={{ false: "#ddd", true: "#1A8E2D"}}
-                                    thumbColor={"white"}
-                                    onValueChange={(value) =>
-                                        setForm({...form, reminderEnabled: value})
-                                    }
-                                    />
-                                </View>
-                            </View>
-                         </View>
-                       {/* Hacer reestock*/}
-                       {/*Notas */}
-                       <View style={styles.section}>
-                        <View style={styles.textAreaContainer}>
-                            <TextInput
-                                style={styles.textArea}
-                                placeholder="Add notes or special instructions"
-                                placeholderTextColor="#999"
-                                value={form.notes}
-                                onChangeText={(text) => setForm({...form, notes: text})}
-                                multiline
-                                numberOfLines={4}
-                                textAlignVertical="top"
-                            />
-                        </View>
-                       </View>
-                </ScrollView>
-
-                <View style={styles.footer}>
-                    <TouchableOpacity
-                    style={[
-                        styles.saveButton,
-                        isSubmitting && styles.saveButtonDisabled,
-                        ]}
-                        onPress={()=>handleSave()}
-                        >
-                        <LinearGradient
-                         colors={["#1a8e2d", "#146922"]}
-                         style={styles.saveButtonGradient}
-                         start={{ x: 0, y: 0 }}
-                         end={{ x: 1, y: 0 }} 
-                        >
-                            <Text style={styles.saveButtonText}> 
-                                {isSubmitting ? "Adding..." : "Add reactive"}
-                            </Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                        style={styles.cancelButton}
-                        onPress={()=> router.back()}
-                        disabled={isSubmitting}
-                    
-                    >
-                        <Text style={styles.cancelButtonText}>
-                            Cancel
-                        </Text>
-                    </TouchableOpacity>
-                </View>
+  const renderFrequencyOptions = () => {
+    return (
+      <View style={styles.optionsGrid}>
+        {FREQUENCIES.map((freq) => (
+          <TouchableOpacity
+            key={freq.id}
+            style={[
+              styles.optionCard,
+              selectedFrequency === freq.label && styles.selectedOptionCard,
+            ]}
+            onPress={() => {
+              setSelectedFrequency(freq.label);
+              setForm({ ...form, frequency: freq.label });
+            }}
+          >
+            <View
+              style={[
+                styles.optionIcon,
+                selectedFrequency === freq.label && styles.selectedOptionIcon,
+              ]}
+            >
+              <Ionicons
+                name={freq.icon}
+                size={24}
+                color={selectedFrequency === freq.label ? "white" : "#666"}
+              />
             </View>
-        </View>
+            <Text
+              style={[
+                styles.optionLabel,
+                selectedFrequency === freq.label && styles.selectedOptionLabel,
+              ]}
+            >
+              {freq.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     );
+  };
+
+  const renderDurationOptions = () => {
+    return (
+      <View style={styles.optionsGrid}>
+        {DURATIONS.map((dur) => (
+          <TouchableOpacity
+            key={dur.id}
+            style={[
+              styles.optionCard,
+              selectedDuration === dur.label && styles.selectedOptionCard,
+            ]}
+            onPress={() => {
+              setSelectedDuration(dur.label);
+              setForm({ ...form, duration: dur.label });
+            }}
+          >
+            <Text
+              style={[
+                styles.durationNumber,
+                selectedDuration === dur.label && styles.selectedDurationNumber,
+              ]}
+            >
+              {dur.value > 0 ? dur.value : "∞"}
+            </Text>
+            <Text
+              style={[
+                styles.optionLabel,
+                selectedDuration === dur.label && styles.selectedOptionLabel,
+              ]}
+            >
+              {dur.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <LinearGradient
+        colors={["#1a8e2d", "#146922"]}
+        style={styles.headerGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      />
+
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={28} color="#1a8e2d" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>New Reactive</Text>
+        </View>
+
+        <ScrollView
+          style={styles.formContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.formContentContainer}
+        >
+          {/* Basic Information */}
+          <View style={styles.section}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.mainInput, errors.name && styles.inputError]}
+                placeholder="Reactive Name"
+                placeholderTextColor="#999"
+                value={form.name}
+                onChangeText={(text) => {
+                  setForm({ ...form, name: text });
+                  if (errors.name) {
+                    setErrors({ ...errors, name: "" });
+                  }
+                }}
+              />
+              {errors.name && (
+                <Text style={styles.errorText}>{errors.name}</Text>
+              )}
+            </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.mainInput, errors.quantity && styles.inputError]}
+                placeholder="Dosage (e.g., 500mg)"
+                placeholderTextColor="#999"
+                value={form.quantity}
+                onChangeText={(text) => {
+                  setForm({ ...form, quantity: text });
+                  if (errors.quantity) {
+                    setErrors({ ...errors, quantity: "" });
+                  }
+                }}
+              />
+              {errors.quantity && (
+                <Text style={styles.errorText}>{errors.quantity}</Text>
+              )}
+            </View>
+          </View>
+
+          {/* Schedule */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>How often?</Text>
+            {errors.frequency && (
+              <Text style={styles.errorText}>{errors.frequency}</Text>
+            )}
+            {renderFrequencyOptions()}
+
+            <Text style={styles.sectionTitle}>For how long?</Text>
+            {errors.duration && (
+              <Text style={styles.errorText}>{errors.duration}</Text>
+            )}
+            {renderDurationOptions()}
+
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <View style={styles.dateIconContainer}>
+                <Ionicons name="calendar" size={20} color="#1a8e2d" />
+              </View>
+              <Text style={styles.dateButtonText}>
+                Starts {form.startDate.toLocaleDateString()}
+              </Text>
+              <Ionicons name="chevron-forward" size={20} color="#666" />
+            </TouchableOpacity>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={form.startDate}
+                mode="date"
+                onChange={(event, date) => {
+                  setShowDatePicker(false);
+                  if (date) setForm({ ...form, startDate: date });
+                }}
+              />
+            )}
+
+            {form.frequency && form.frequency !== "As needed" && (
+              <View style={styles.timesContainer}>
+                <Text style={styles.timesTitle}>Reactive Times</Text>
+                {form.times.map((time, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.timeButton}
+                    onPress={() => {
+                      setShowTimePicker(true);
+                    }}
+                  >
+                    <View style={styles.timeIconContainer}>
+                      <Ionicons name="time-outline" size={20} color="#1a8e2d" />
+                    </View>
+                    <Text style={styles.timeButtonText}>{time}</Text>
+                    <Ionicons name="chevron-forward" size={20} color="#666" />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {showTimePicker && (
+              <DateTimePicker
+                value={(() => {
+                  const [hours, minutes] = form.times[0].split(":").map(Number);
+                  const date = new Date();
+                  date.setHours(hours, minutes, 0, 0);
+                  return date;
+                })()}
+                mode="time"
+                onChange={(event, date) => {
+                  setShowTimePicker(false);
+                  if (date) {
+                    const newTime = date.toLocaleTimeString("default", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                    });
+                    setForm((prev) => ({
+                      ...prev,
+                      times: prev.times.map((t, i) => (i === 0 ? newTime : t)),
+                    }));
+                  }
+                }}
+              />
+            )}
+          </View>
+
+          {/* Reminders */}
+          <View style={styles.section}>
+            <View style={styles.card}>
+              <View style={styles.switchRow}>
+                <View style={styles.switchLabelContainer}>
+                  <View style={styles.iconContainer}>
+                    <Ionicons name="notifications" size={20} color="#1a8e2d" />
+                  </View>
+                  <View>
+                    <Text style={styles.switchLabel}>Reminders</Text>
+                    <Text style={styles.switchSubLabel}>
+                      Get notified when it's time to refill the reactives
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={form.reminderEnabled}
+                  onValueChange={(value) =>
+                    setForm({ ...form, reminderEnabled: value })
+                  }
+                  trackColor={{ false: "#ddd", true: "#1a8e2d" }}
+                  thumbColor="white"
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Refill Tracking */}
+          <View style={styles.section}>
+            <View style={styles.card}>
+              <View style={styles.switchRow}>
+                <View style={styles.switchLabelContainer}>
+                  <View style={styles.iconContainer}>
+                    <Ionicons name="reload" size={20} color="#1a8e2d" />
+                  </View>
+                  <View>
+                    <Text style={styles.switchLabel}>Refill Tracking</Text>
+                    <Text style={styles.switchSubLabel}>
+                      Get notified when you need to refill
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={form.refillReminder}
+                  onValueChange={(value) => {
+                    setForm({ ...form, refillReminder: value });
+                    if (!value) {
+                      setErrors({
+                        ...errors,
+                        currentSupply: "",
+                        refillAt: "",
+                      });
+                    }
+                  }}
+                  trackColor={{ false: "#ddd", true: "#1a8e2d" }}
+                  thumbColor="white"
+                />
+              </View>
+              {form.refillReminder && (
+                <View style={styles.refillInputs}>
+                  <View style={styles.inputRow}>
+                    <View style={[styles.inputContainer, styles.flex1]}>
+                      <TextInput
+                        style={[
+                          styles.input,
+                          errors.currentSupply && styles.inputError,
+                        ]}
+                        placeholder="Current Supply"
+                        placeholderTextColor="#999"
+                        value={form.currentSupply}
+                        onChangeText={(text) => {
+                          setForm({ ...form, currentSupply: text });
+                          if (errors.currentSupply) {
+                            setErrors({ ...errors, currentSupply: "" });
+                          }
+                        }}
+                        keyboardType="numeric"
+                      />
+                      {errors.currentSupply && (
+                        <Text style={styles.errorText}>
+                          {errors.currentSupply}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={[styles.inputContainer, styles.flex1]}>
+                      <TextInput
+                        style={[
+                          styles.input,
+                          errors.refillAt && styles.inputError,
+                        ]}
+                        placeholder="Alert at"
+                        placeholderTextColor="#999"
+                        value={form.refillAt}
+                        onChangeText={(text) => {
+                          setForm({ ...form, refillAt: text });
+                          if (errors.refillAt) {
+                            setErrors({ ...errors, refillAt: "" });
+                          }
+                        }}
+                        keyboardType="numeric"
+                      />
+                      {errors.refillAt && (
+                        <Text style={styles.errorText}>{errors.refillAt}</Text>
+                      )}
+                    </View>
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Notes */}
+          <View style={styles.section}>
+            <View style={styles.textAreaContainer}>
+              <TextInput
+                style={styles.textArea}
+                placeholder="Add notes or special instructions..."
+                placeholderTextColor="#999"
+                value={form.notes}
+                onChangeText={(text) => setForm({ ...form, notes: text })}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={[
+              styles.saveButton,
+              isSubmitting && styles.saveButtonDisabled,
+            ]}
+            onPress={handleSave}
+            disabled={isSubmitting}
+          >
+            <LinearGradient
+              colors={["#1a8e2d", "#146922"]}
+              style={styles.saveButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Text style={styles.saveButtonText}>
+                {isSubmitting ? "Adding..." : "Add Reactive"}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => router.back()}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

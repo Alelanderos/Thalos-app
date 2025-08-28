@@ -1,32 +1,32 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  Animated,
-  Modal,
-  Alert,
-  AppState,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Link, useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle } from "react-native-svg";
-import {
-  getReactives,
-  Reactive,
-  getTodaysDoses,
-  recordDose,
-  DoseHistory,
-} from "../utils/storage";
 import { useFocusEffect } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Link, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  Animated,
+  AppState,
+  Dimensions,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Svg, { Circle } from "react-native-svg";
 import {
   registerForPushNotificationsAsync,
   scheduleReactiveReminder,
-} from "../utils/notifications";
+} from "./utils/notifications";
+import {
+  DoseHistory,
+  getReactives,
+  getTodaysDoses,
+  Reactive,
+  recordDose,
+} from "./utils/storage";
 
 const { width } = Dimensions.get("window");
 
@@ -269,6 +269,7 @@ export default function HomeScreen() {
                 </View>
               )}
             </TouchableOpacity>
+            {/* Aqui se le mueve la cantidad de muestras, si es que se usa*/}
           </View>
           <CircularProgress
             progress={progress}
@@ -305,7 +306,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Today's Schedule</Text>
-            <Link href="/calendar" asChild>
+            <Link href="/calender" asChild>
               <TouchableOpacity>
                 <Text style={styles.seeAllButton}>See All</Text>
               </TouchableOpacity>
