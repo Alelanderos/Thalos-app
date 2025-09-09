@@ -44,7 +44,7 @@ export default function SplashScreen(){
             ]}
             >
                 <Fontisto name="laboratory" size={80} color="White" />
-                <Text style ={styles.appName}>Maywa</Text>
+                <Text style ={styles.appName}>Thalos</Text>
             </Animated.View>
         </View>
     );
