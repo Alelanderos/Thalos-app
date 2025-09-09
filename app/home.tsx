@@ -35,28 +35,28 @@ const { width } = Dimensions.get("window");
 const QUICK_ACTIONS = [
   {
     icon: "add-circle-outline" as const,
-    label: "Add\nReactive",
+    label: "Invetario",
     route: "/reactives/add" as const,
     color: "#2E7D32",
     gradient: ["#4CAF50", "#2E7D32"] as [string, string],
   },
   {
     icon: "calendar-outline" as const,
-    label: "Calendar\nView",
+    label: "Calendario",
     route: "/calendar" as const,
     color: "#1976D2",
     gradient: ["#2196F3", "#1976D2"] as [string, string],
   },
   {
     icon: "time-outline" as const,
-    label: "History\nLog",
+    label: "Historial\nEntradas",
     route: "/history" as const,
     color: "#C2185B",
     gradient: ["#E91E63", "#C2185B"] as [string, string],
   },
   {
     icon: "medical-outline" as const,
-    label: "Refill\nTracker",
+    label: "Refill\nInventario",
     route: "/refills" as const,
     color: "#E64A19",
     gradient: ["#FF5722", "#E64A19"] as [string, string],
